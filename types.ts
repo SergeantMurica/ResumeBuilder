@@ -15,4 +15,18 @@ export interface Theme {
   fontSize: string;
   borderRadius: string;
   spacing: string;
+  headerStyle: "simple" | "modern" | "classic" | "minimal" | "bold";
+  sectionStyle: "card" | "flat" | "bordered" | "minimal";
+  accentColor: string;
+  customCSS: string;
+  fontWeight: "light" | "normal" | "medium" | "semibold" | "bold";
+  paperSize: "a4" | "letter" | "legal";
+  lineHeight: "tight" | "normal" | "relaxed";
+}
+
+export interface User {
+  id: string;
+  displayName: string | null;
+  email: string | null;
+  photoURL: string | null;
 }
