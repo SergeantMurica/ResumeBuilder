@@ -1,4 +1,4 @@
-import { Theme } from "../../types";
+import { Theme } from "../types";
 
 interface ThemeCustomizerProps {
   theme: Theme;
@@ -6,8 +6,19 @@ interface ThemeCustomizerProps {
 }
 
 const ThemeCustomizer = ({ theme, setTheme }: ThemeCustomizerProps) => {
-  const updateTheme = (key: keyof Theme, value: string) => {
+  const updateTheme = (key: keyof Theme, value: any) => {
     setTheme({ ...theme, [key]: value });
+  };
+
+  const handleSidebarSectionsChange = (type: string) => {
+    const currentSections = theme.sidebarSections || [];
+    let newSections;
+    if (currentSections.includes(type)) {
+      newSections = currentSections.filter((t) => t !== type);
+    } else {
+      newSections = [...currentSections, type];
+    }
+    updateTheme("sidebarSections", newSections);
   };
 
   const colorOptions = [
@@ -23,6 +34,9 @@ const ThemeCustomizer = ({ theme, setTheme }: ThemeCustomizerProps) => {
     { value: "#db2777", label: "Pink" },
     { value: "#9333ea", label: "Purple" },
     { value: "#111827", label: "Dark" },
+    { value: "#f3f4f6", label: "Light" },
+    { value: "#ffffff", label: "White" },
+    { value: "#000000", label: "Black" },
   ];
 
   const fontOptions = [
@@ -38,25 +52,35 @@ const ThemeCustomizer = ({ theme, setTheme }: ThemeCustomizerProps) => {
     { value: "Times New Roman", label: "Times New Roman" },
     { value: "Arial", label: "Arial" },
     { value: "Helvetica", label: "Helvetica" },
+    { value: "Verdana", label: "Verdana" },
+    { value: "Courier New", label: "Courier New" },
+    { value: "Gill Sans", label: "Gill Sans" },
+    { value: "Trebuchet MS", label: "Trebuchet MS" },
   ];
 
   const sizeOptions = [
+    { value: "extra-small", label: "Extra Small" },
     { value: "small", label: "Small" },
     { value: "medium", label: "Medium" },
     { value: "large", label: "Large" },
+    { value: "extra-large", label: "Extra Large" },
   ];
 
   const radiusOptions = [
     { value: "none", label: "None" },
+    { value: "xs", label: "Extra Small" },
     { value: "sm", label: "Small" },
     { value: "md", label: "Medium" },
     { value: "lg", label: "Large" },
+    { value: "xl", label: "Extra Large" },
+    { value: "full", label: "Full" },
   ];
 
   const spacingOptions = [
     { value: "compact", label: "Compact" },
     { value: "normal", label: "Normal" },
     { value: "relaxed", label: "Relaxed" },
+    { value: "expanded", label: "Expanded" },
   ];
 
   const headerStyleOptions = [
@@ -65,6 +89,7 @@ const ThemeCustomizer = ({ theme, setTheme }: ThemeCustomizerProps) => {
     { value: "classic", label: "Classic" },
     { value: "minimal", label: "Minimal" },
     { value: "bold", label: "Bold" },
+    { value: "fancy", label: "Fancy" },
   ];
 
   const sectionStyleOptions = [
@@ -72,6 +97,8 @@ const ThemeCustomizer = ({ theme, setTheme }: ThemeCustomizerProps) => {
     { value: "flat", label: "Flat" },
     { value: "bordered", label: "Bordered" },
     { value: "minimal", label: "Minimal" },
+    { value: "borderless", label: "Borderless" },
+    { value: "shadowed", label: "Shadowed" },
   ];
 
   const fontWeightOptions = [
@@ -80,18 +107,60 @@ const ThemeCustomizer = ({ theme, setTheme }: ThemeCustomizerProps) => {
     { value: "medium", label: "Medium" },
     { value: "semibold", label: "Semi-Bold" },
     { value: "bold", label: "Bold" },
+    { value: "extrabold", label: "Extra Bold" },
   ];
 
   const paperSizeOptions = [
     { value: "a4", label: "A4" },
     { value: "letter", label: "Letter" },
     { value: "legal", label: "Legal" },
+    { value: "custom", label: "Custom" },
   ];
 
   const lineHeightOptions = [
     { value: "tight", label: "Tight" },
     { value: "normal", label: "Normal" },
     { value: "relaxed", label: "Relaxed" },
+    { value: "loose", label: "Loose" },
+    { value: "extra-loose", label: "Extra Loose" },
+  ];
+
+  const layoutTypeOptions = [
+    { value: "single-column", label: "Single Column" },
+    { value: "two-column-left", label: "Two Column (Sidebar Left)" },
+    { value: "two-column-right", label: "Two Column (Sidebar Right)" },
+    { value: "three-column", label: "Three Column" },
+  ];
+
+  const widthOptions = [
+    "25%",
+    "30%",
+    "35%",
+    "40%",
+    "45%",
+    "50%",
+    "55%",
+    "60%",
+    "65%",
+    "70%",
+    "75%",
+    "80%",
+    "85%",
+    "90%",
+    "95%",
+    "100%",
+  ];
+
+  const availableSectionTypes = [
+    "personalInfo",
+    "skills",
+    "languages",
+    "workExperience",
+    "education",
+    "projects",
+    "achievements",
+    "certificates",
+    "interests",
   ];
 
   const ThemePreview = () => {
@@ -544,6 +613,105 @@ const ThemeCustomizer = ({ theme, setTheme }: ThemeCustomizerProps) => {
                 Add custom CSS rules to further customize your resume
               </p>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Layout Type
+              </label>
+              <select
+                aria-label="Layout Type"
+                className="block w-full p-2 border border-gray-300 rounded-md"
+                value={theme.layoutType}
+                onChange={(e) => updateTheme("layoutType", e.target.value)}>
+                {layoutTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sidebar Width (Only show if two-column) */}
+            {theme.layoutType !== "single-column" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sidebar Width
+                </label>
+                <select
+                  aria-label="Sidebar Width"
+                  className="block w-full p-2 border border-gray-300 rounded-md"
+                  value={theme.sidebarWidth}
+                  onChange={(e) => updateTheme("sidebarWidth", e.target.value)}>
+                  {widthOptions.map((width) => (
+                    <option key={width} value={width}>
+                      {width}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Sidebar Background Color (Only show if two-column) */}
+            {theme.layoutType !== "single-column" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sidebar Background
+                </label>
+                <input
+                  type="color"
+                  value={theme.sidebarBackgroundColor}
+                  onChange={(e) =>
+                    updateTheme("sidebarBackgroundColor", e.target.value)
+                  }
+                  className="w-full h-10 p-1 border border-gray-300 rounded-md"
+                  title="Sidebar Background Color"
+                />
+              </div>
+            )}
+
+            {/* Sidebar Text Color (Only show if two-column) */}
+            {theme.layoutType !== "single-column" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sidebar Text Color
+                </label>
+                <input
+                  type="color"
+                  value={theme.sidebarTextColor}
+                  onChange={(e) =>
+                    updateTheme("sidebarTextColor", e.target.value)
+                  }
+                  className="w-full h-10 p-1 border border-gray-300 rounded-md"
+                  title="Sidebar Text Color"
+                />
+              </div>
+            )}
+
+            {/* Sidebar Sections (Only show if two-column) */}
+            {theme.layoutType !== "single-column" && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sections in Sidebar
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {availableSectionTypes.map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => handleSidebarSectionsChange(type)}
+                      className={`px-3 py-1 rounded text-sm border ${
+                        (theme.sidebarSections || []).includes(type)
+                          ? "bg-indigo-100 border-indigo-300 text-indigo-700"
+                          : "bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+                      }`}>
+                      {type}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Select which section types appear in the sidebar.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

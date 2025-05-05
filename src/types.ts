@@ -22,6 +22,11 @@ export interface Theme {
   fontWeight: "light" | "normal" | "medium" | "semibold" | "bold";
   paperSize: "a4" | "letter" | "legal";
   lineHeight: "tight" | "normal" | "relaxed";
+  layoutType: "single-column" | "two-column-left" | "two-column-right";
+  sidebarSections: string[];
+  sidebarWidth: string;
+  sidebarBackgroundColor: string;
+  sidebarTextColor: string;
 }
 
 export interface User {

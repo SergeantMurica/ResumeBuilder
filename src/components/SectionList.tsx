@@ -1,7 +1,7 @@
 // components/SectionList.tsx
 import { useRef } from "react";
 import { useDrag, useDrop } from "react-dnd";
-import { ResumeSection } from "../../types";
+import { ResumeSection } from "../types";
 
 interface SectionListProps {
   sections: ResumeSection[];

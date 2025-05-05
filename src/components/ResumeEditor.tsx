@@ -6,22 +6,61 @@ import SectionEditor from "./SectionEditor";
 import SectionList from "./SectionList";
 import ThemeCustomizer from "./ThemeCustomizer";
 import { useResume } from "../contexts/ResumeContext";
-import { ResumeSection } from "../../types";
+import { ResumeSection } from "../types";
 
 const ResumeEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { currentResume, loading, error, loadResume, setSections, setTheme } =
-    useResume();
+  const {
+    currentResume,
+    loading,
+    error,
+    loadResume,
+    setSections,
+    setTheme,
+    saveResume,
+    unsavedChanges,
+  } = useResume();
   const [activeTab, setActiveTab] = useState<"editor" | "theme" | "preview">(
     "editor"
   );
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadResume(id);
     }
   }, [id, loadResume]);
+
+  // Add save confirmation before leaving the page if there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (unsavedChanges) {
+        e.preventDefault();
+        e.returnValue =
+          "You have unsaved changes. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [unsavedChanges]);
+
+  const handleSave = async () => {
+    if (!unsavedChanges) return;
+
+    setIsSaving(true);
+    try {
+      await saveResume();
+    } catch (error) {
+      console.error("Failed to save changes:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const addSection = (type: string) => {
     if (!currentResume) return;
@@ -85,7 +124,7 @@ const ResumeEditor = () => {
     setSections(updatedSections);
   };
 
-  if (loading) {
+  if (loading && !currentResume) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
@@ -162,10 +201,48 @@ const ResumeEditor = () => {
                 &larr; Back to Dashboard
               </button>
             </div>
-            <div>
+            <div className="flex items-center space-x-4">
+              {unsavedChanges && (
+                <span className="text-amber-600 text-sm animate-pulse">
+                  Unsaved changes
+                </span>
+              )}
+              <button
+                onClick={handleSave}
+                disabled={!unsavedChanges || isSaving}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${
+                  !unsavedChanges || isSaving
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-700 text-white"
+                }`}>
+                {isSaving ? (
+                  <span className="flex items-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </span>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
               <button
                 onClick={() => navigate(`/resume/${id}/preview`)}
-                className="ml-4 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Preview
               </button>
             </div>
@@ -193,6 +270,34 @@ const ResumeEditor = () => {
               Theme
             </button>
           </div>
+
+          {/* Show loading overlay if saving but keep UI accessible */}
+          {isSaving && (
+            <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+              <div className="bg-white p-4 rounded-lg shadow-lg">
+                <div className="flex items-center">
+                  <svg
+                    className="animate-spin h-5 w-5 mr-3 text-indigo-600"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Saving your changes...</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {activeTab === "editor" && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

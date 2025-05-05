@@ -7,7 +7,7 @@ import LanguagesEditor from "./section-editors/LanguagesEditor";
 import ProjectsEditor from "./section-editors/ProjectsEditor";
 import CertificationsEditor from "./section-editors/CertificationsEditor";
 import CustomEditor from "./section-editors/CustomEditor";
-import { ResumeSection } from "../../types";
+import { ResumeSection } from "../types";
 
 interface SectionEditorProps {
   section: ResumeSection;
@@ -21,6 +21,13 @@ const SectionEditor = ({
   updateSectionTitle,
 }: SectionEditorProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [sectionTitle, setSectionTitle] = useState(section.title);
+
+  // Update section title with debouncing
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSectionTitle(e.target.value);
+    updateSectionTitle(section.id, e.target.value);
+  };
 
   const renderEditor = () => {
     switch (section.type) {
@@ -86,16 +93,17 @@ const SectionEditor = ({
   };
 
   return (
-    <div className="mb-6 border border-gray-200 rounded-md">
+    <div className="mb-6 border border-gray-200 rounded-md hover:border-indigo-300 transition-colors">
       <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200 rounded-t-md">
         <div className="flex-1 min-w-0">
           <input
             title="Section Title"
             aria-label="Section Title"
             type="text"
-            className="w-full bg-transparent border-none focus:ring-0 font-medium text-gray-800 p-0"
-            value={section.title}
-            onChange={(e) => updateSectionTitle(section.id, e.target.value)}
+            className="w-full bg-transparent border-none focus:ring-1 focus:ring-indigo-500 font-medium text-gray-800 p-1 rounded"
+            value={sectionTitle}
+            onChange={handleTitleChange}
+            placeholder="Section Title"
           />
         </div>
         <button
@@ -103,7 +111,7 @@ const SectionEditor = ({
           aria-label="Toggle Section"
           type="button"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1 text-gray-500 hover:text-gray-700">
+          className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className={`h-5 w-5 transition-transform ${
@@ -119,7 +127,9 @@ const SectionEditor = ({
           </svg>
         </button>
       </div>
-      {!isCollapsed && <div className="p-4">{renderEditor()}</div>}
+      {!isCollapsed && (
+        <div className="p-4 overflow-y-auto max-h-[70vh]">{renderEditor()}</div>
+      )}
     </div>
   );
 };

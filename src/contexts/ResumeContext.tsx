@@ -21,7 +21,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../firebase/config";
 import { useAuth } from "./AuthContext";
-import { ResumeSection, Theme } from "../../types";
+import { ResumeSection, Theme } from "../types";
 
 interface Resume {
   id: string;
@@ -37,19 +37,21 @@ interface ResumeContextType {
   currentResume: Resume | null;
   loading: boolean;
   error: string | null;
+  unsavedChanges: boolean;
   createResume: (name: string) => Promise<string>;
   updateResume: (resumeId: string, data: Partial<Resume>) => Promise<void>;
   deleteResume: (resumeId: string) => Promise<void>;
   loadResume: (resumeId: string) => Promise<void>;
   setSections: (sections: ResumeSection[]) => void;
   setTheme: (theme: Theme) => void;
+  saveResume: () => Promise<void>;
 }
 
-const ResumeContext = createContext<ResumeContextType | null>(null);
+const ResumeContext = createContext<ResumeContextType | undefined>(undefined);
 
 export function useResume() {
   const context = useContext(ResumeContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useResume must be used within a ResumeProvider");
   }
   return context;
@@ -65,6 +67,9 @@ export function ResumeProvider({ children }: ResumeProviderProps) {
   const [currentResume, setCurrentResume] = useState<Resume | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [localResumeData, setLocalResumeData] =
+    useState<Partial<Resume> | null>(null);
 
   // Initial theme and section for new resumes
   const defaultTheme: Theme = {
@@ -83,6 +88,11 @@ export function ResumeProvider({ children }: ResumeProviderProps) {
     fontWeight: "normal",
     paperSize: "a4",
     lineHeight: "normal",
+    layoutType: "single-column",
+    sidebarSections: ["personalInfo", "skills", "languages"],
+    sidebarWidth: "30%",
+    sidebarBackgroundColor: "#f3f4f6",
+    sidebarTextColor: "#1f2937",
   };
 
   const defaultSection: ResumeSection = {
@@ -94,6 +104,9 @@ export function ResumeProvider({ children }: ResumeProviderProps) {
       email: "",
       phone: "",
       address: "",
+      website: "",
+      linkedin: "",
+      github: "",
     },
     position: 0,
   };
@@ -217,6 +230,7 @@ export function ResumeProvider({ children }: ResumeProviderProps) {
             prev ? { ...prev, ...data, updatedAt: updatedTimestamp } : null
           );
         }
+        setUnsavedChanges(false);
       } catch (err: any) {
         console.error("Error updating resume:", err);
         throw new Error(`Failed to update resume: ${err.message}`);
@@ -294,32 +308,58 @@ export function ResumeProvider({ children }: ResumeProviderProps) {
   const setSections = useCallback(
     (sections: ResumeSection[]) => {
       if (currentResume) {
-        updateResume(currentResume.id, { sections });
+        // Update local state immediately without saving to Firestore
+        setCurrentResume((prev) => (prev ? { ...prev, sections } : null));
+        setUnsavedChanges(true);
       }
     },
-    [currentResume, updateResume]
+    [currentResume]
   );
 
   const setTheme = useCallback(
     (theme: Theme) => {
       if (currentResume) {
-        updateResume(currentResume.id, { theme });
+        // Update local state immediately without saving to Firestore
+        setCurrentResume((prev) => (prev ? { ...prev, theme } : null));
+        setUnsavedChanges(true);
       }
     },
-    [currentResume, updateResume]
+    [currentResume]
   );
+
+  // New function to save changes to Firestore
+  const saveResume = useCallback(async () => {
+    if (!currentResume || !unsavedChanges) return;
+
+    try {
+      setLoading(true);
+      await updateResume(currentResume.id, {
+        sections: currentResume.sections,
+        theme: currentResume.theme,
+        name: currentResume.name,
+      });
+      setUnsavedChanges(false);
+    } catch (err: any) {
+      console.error("Error saving resume:", err);
+      setError(`Failed to save resume: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentResume, updateResume, unsavedChanges]);
 
   const value = {
     resumes,
     currentResume,
     loading,
     error,
+    unsavedChanges,
     createResume,
     updateResume,
     deleteResume,
     loadResume,
     setSections,
     setTheme,
+    saveResume,
   };
 
   return (
